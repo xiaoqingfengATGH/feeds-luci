@@ -2070,6 +2070,9 @@ msgstr "子网掩码"
 msgid "Network"
 msgstr "网络"
 
+msgid "dns"
+msgstr "DNS"
+
 msgid "Network Utilities"
 msgstr "网络工具"
 
