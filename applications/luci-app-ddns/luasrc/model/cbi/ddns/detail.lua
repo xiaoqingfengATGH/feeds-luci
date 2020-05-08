@@ -39,7 +39,7 @@ local err_ipv6_other = bold_on ..
 			font_off ..
 			"<br />" .. translate("please select 'IPv4' address version in") .. " " ..
 			[[<a href="]] ..
-					DISP.build_url("admin", "services", "ddns", "detail", section) ..
+					DISP.build_url("admin", "dns", "ddns", "detail", section) ..
 					"?tab.dns." .. section .. "=basic" ..
 				[[">]] ..
 				translate("Basic Settings") ..
@@ -214,7 +214,7 @@ end
 local m 	= Map("ddns")
 m.title		= CTRL.app_title_back()
 m.description	= CTRL.app_description()
-m.redirect	= DISP.build_url("admin", "services", "ddns")
+m.redirect	= DISP.build_url("admin", "dns", "ddns")
 
 m.on_after_commit = function(self)
 	if self.changed then	-- changes ?
@@ -247,7 +247,7 @@ if m:formvalue("cbid.ddns.%s._switch" % section) then	-- section == arg[1]
 	m.uci:save(m.config)
 
 	-- reload page
-	HTTP.redirect( DISP.build_url("admin", "services", "ddns", "detail", section) )
+	HTTP.redirect( DISP.build_url("admin", "dns", "ddns", "detail", section) )
 	return
 end
 

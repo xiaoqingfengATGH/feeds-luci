@@ -12,7 +12,7 @@ local DDNS = require "luci.tools.ddns"		-- ddns multiused functions
 local m = Map("ddns")
 m.title		= CTRL.app_title_back()
 m.description	= CTRL.app_description()
-m.redirect	= DISP.build_url("admin", "services", "ddns")
+m.redirect	= DISP.build_url("admin", "dns", "ddns")
 
 function m.commit_handler(self)
 	if self.changed then	-- changes ?

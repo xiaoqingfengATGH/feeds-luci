@@ -40,7 +40,7 @@ function index()
 	-- preset new option "lookup_host" if not already defined
 	local uci = muci.cursor()
 	local commit = false
-	uci:foreach("ddns", "service", function (s)
+	uci:foreach("ddns", "dns", function (s)
 		if not s["lookup_host"] and s["domain"] then
 			uci:set("ddns", s[".name"], "lookup_host", s["domain"])
 			commit = true
@@ -49,14 +49,14 @@ function index()
 	if commit then uci:commit("ddns") end
 	uci:unload("ddns")
 
-	entry( {"admin", "services", "ddns"}, cbi("ddns/overview"), _("Dynamic DNS"), 59)
-	entry( {"admin", "services", "ddns", "detail"}, cbi("ddns/detail"), nil ).leaf = true
-	entry( {"admin", "services", "ddns", "hints"}, cbi("ddns/hints",
+	entry( {"admin", "dns", "ddns"}, cbi("ddns/overview"), _("Dynamic DNS"), 59)
+	entry( {"admin", "dns", "ddns", "detail"}, cbi("ddns/detail"), nil ).leaf = true
+	entry( {"admin", "dns", "ddns", "hints"}, cbi("ddns/hints",
 		{hideapplybtn=true, hidesavebtn=true, hideresetbtn=true}), nil ).leaf = true
-	entry( {"admin", "services", "ddns", "global"}, cbi("ddns/global"), nil ).leaf = true
-	entry( {"admin", "services", "ddns", "logview"}, call("logread") ).leaf = true
-	entry( {"admin", "services", "ddns", "startstop"}, post("startstop") ).leaf = true
-	entry( {"admin", "services", "ddns", "status"}, call("status") ).leaf = true
+	entry( {"admin", "dns", "ddns", "global"}, cbi("ddns/global"), nil ).leaf = true
+	entry( {"admin", "dns", "ddns", "logview"}, call("logread") ).leaf = true
+	entry( {"admin", "dns", "ddns", "startstop"}, post("startstop") ).leaf = true
+	entry( {"admin", "dns", "ddns", "status"}, call("status") ).leaf = true
 end
 
 -- Application specific information functions
@@ -79,7 +79,7 @@ end
 function app_title_back()
 	local tmp = {}
 	tmp[#tmp+1] = 	[[<a href="]]
-	tmp[#tmp+1] =	DISP.build_url("admin", "services", "ddns")
+	tmp[#tmp+1] =	DISP.build_url("admin", "dns", "ddns")
 	tmp[#tmp+1] =	[[">]]
 	tmp[#tmp+1] =	  translate(app_title)
 	tmp[#tmp+1] = 	[[</a>]]
@@ -138,7 +138,7 @@ local function _get_status()
 		url_up	   = url_start,		-- link to enable DDS (System-Startup)
 	}
 
-	uci:foreach("ddns", "service", function (s)
+	uci:foreach("ddns", "dns", function (s)
 
 		-- Get section we are looking at
 		-- and enabled state

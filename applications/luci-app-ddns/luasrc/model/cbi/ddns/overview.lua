@@ -80,7 +80,7 @@ if show_hints or need_update or not_enabled then
 	-- Show more hints on a separate page
 	if show_hints then
 		local dv = s:option(DummyValue, "_separate")
-		dv.titleref = DISP.build_url("admin", "services", "ddns", "hints")
+		dv.titleref = DISP.build_url("admin", "dns", "ddns", "hints")
 		dv.rawhtml  = true
 		dv.title = bold_on ..
 			translate("Show more") .. bold_off
@@ -97,12 +97,12 @@ ts = m:section( TypedSection, "service",
 	.. translate("If you want to send updates for IPv4 and IPv6 you need to define two separate Configurations "
 		.. "i.e. 'myddns_ipv4' and 'myddns_ipv6'")
 	.. "<br />"
-	.. [[<a href="]] .. DISP.build_url("admin", "services", "ddns", "global") .. [[">]]
+	.. [[<a href="]] .. DISP.build_url("admin", "dns", "ddns", "global") .. [[">]]
 	.. translate("To change global settings click here") .. [[</a>]] )
 ts.sectionhead = translate("Configuration")
 ts.template = "cbi/tblsection"
 ts.addremove = true
-ts.extedit = DISP.build_url("admin", "services", "ddns", "detail", "%s")
+ts.extedit = DISP.build_url("admin", "dns", "ddns", "detail", "%s")
 function ts.create(self, name)
 	AbstractSection.create(self, name)
 	HTTP.redirect( self.extedit:format(name) )

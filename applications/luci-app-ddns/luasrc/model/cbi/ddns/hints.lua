@@ -16,7 +16,7 @@ bold_off = [[</strong>]]
 m = Map("ddns")
 m.title		= CTRL.app_title_back()
 m.description	= CTRL.app_description()
-m.redirect	= DISP.build_url("admin", "services", "ddns")
+m.redirect	= DISP.build_url("admin", "dns", "ddns")
 
 -- SimpleSection definition -- #################################################
 -- show Hints to optimize installation and script usage

@@ -2,7 +2,7 @@
 <script type="text/javascript">//<![CDATA[
 
 	//start polling data every 30 second, this doesn't change so much
-	XHR.poll(30, '<%=url([[admin]], [[services]], [[ddns]], [[status]])%>', null,
+	XHR.poll(30, '<%=url([[admin]], [[dns]], [[ddns]], [[status]])%>', null,
 		function(x, data) {
 			if (data) { 
 				var tbl = document.getElementById('ddns_status_table');
@@ -41,7 +41,7 @@
 //]]></script>
 
 <fieldset class="cbi-section" id="ddns_status_section">
-	<legend><a href="<%=url([[admin]], [[services]], [[ddns]])%>"><%:Dynamic DNS%></a></legend>
+	<legend><a href="<%=url([[admin]], [[dns]], [[ddns]])%>"><%:Dynamic DNS%></a></legend>
 	<div class="cbi-section-node">
 		<div class="table" id="ddns_status_table">
 			<div class="tr table-titles" id="ddns_status_legend">
