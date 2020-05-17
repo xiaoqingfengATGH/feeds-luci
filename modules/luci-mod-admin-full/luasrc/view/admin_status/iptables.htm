@@ -81,12 +81,14 @@
 
 <div class="cbi-map" style="position: relative">
 
-	<form method="post" action="<%=url("admin/status/iptables_action")%>" style="position: absolute; right: 0">
+	<fieldset class="cbi-section">
+	<form method="post" action="<%=url("admin/status/iptables_action")%>">
 		<input type="hidden" name="token" value="<%=token%>" />
 		<input type="hidden" name="family" value="<%=mode%>" />
-		<input type="submit" class="cbi-button" name="zero" value="<%:Reset Counters%>" />
-		<input type="submit" class="cbi-button" name="restart" value="<%:Restart Firewall%>" />
+		<input type="submit" class="cbi-button cbi-button-link" name="zero" value="<%:Reset Counters%>" />
+		<input type="submit" class="cbi-button cbi-button-link" name="restart" value="<%:Restart Firewall%>" />
 	</form>
+	</fieldset>
 
 	<fieldset class="cbi-section">
 
