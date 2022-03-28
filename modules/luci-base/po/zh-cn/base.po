@@ -260,6 +260,18 @@ msgstr "禁止解析 IPv6 DNS 记录"
 msgid "Filter IPv6(AAAA) DNS Query Name Resolve"
 msgstr "过滤掉 IPv6(AAAA) ，只返回 IPv4 DNS 域名记录"
 
+msgid "Disable HTTPS DNS Type forwards"
+msgstr "禁止解析 HTTPS 类型的记录"
+
+msgid "Filter HTTPS DNS Query Type Name Resolve"
+msgstr "过滤掉 HTTPS 类型65的查询 ，避免iOS设备绕过常规DNS服务"
+
+msgid "Disable Unknown DNS Type forwards"
+msgstr "禁止解析 Unknown 类型的记录"
+
+msgid "Filter Unknown DNS Query Type Name Resolve"
+msgstr "过滤掉 Unknown 未知类型的查询"
+
 msgid "Minimum TTL to send to clients"
 msgstr "客户端缓存的最小 DNS TTL"
 
@@ -1072,6 +1084,10 @@ msgstr "启用流入数据包镜像"
 
 msgid "Enable mirroring of outgoing packets"
 msgstr "启用流出数据包镜像"
+
+msgid ""
+"Enable packet steering across all CPUs. May help or hinder network speed."
+msgstr "启用数据包多核负载均衡。 可能会增强网络转发性能。"
 
 msgid "Enable the DF (Don't Fragment) flag of the encapsulating packets."
 msgstr "启用后报文的 DF（禁止分片）标志。"
@@ -2395,6 +2411,9 @@ msgstr "软件包列表已超过 24 小时未更新"
 
 msgid "Package name"
 msgstr "软件包名称"
+
+msgid "Packet Steering"
+msgstr "数据包负载均衡"
 
 msgid "Packets"
 msgstr "数据包"
