@@ -11,7 +11,11 @@ enable = e:option(Flag, "enable", translate("Enable"))
 enable.rmempty = false
 
 refresh_token = e:option(Value, "refresh_token", translate("Refresh Token"))
-refresh_token.description = translate("<a href=\"https://github.com/messense/aliyundrive-webdav#%E8%8E%B7%E5%8F%96-refresh_token\" target=\"_blank\">How to get refresh token</a>")
+refresh_token.description = translate("Double click the input box above to get refresh token by scanning qrcode")
+
+qrcode = e:option(DummyValue, '', '')
+qrcode.rawhtml = true
+qrcode.template = 'aliyundrive-webdav/aliyundrive-webdav_qrcode'
 
 root = e:option(Value, "root", translate("Root Directory"))
 root.description = translate("Restrict access to a folder of aliyundrive, defaults to / which means no restrictions")
@@ -35,6 +39,22 @@ auth_password.password = true
 read_buffer_size = e:option(Value, "read_buffer_size", translate("Read Buffer Size"))
 read_buffer_size.default = "10485760"
 read_buffer_size.datatype = "uinteger"
+
+prefer_http_download = e:option(Flag, "prefer_http_download", translate("Prefer HTTP Download"))
+prefer_http_download.description = translate("Prefer downloading files using HTTP instead of HTTPS protocol")
+prefer_http_download.rmempty = false
+
+no_redirect = e:option(Flag, "no_redirect", translate("Disable Redirect"))
+no_redirect.description = translate("Disable 302 redirect when using app refresh token")
+no_redirect.rmempty = false
+
+upload_buffer_size = e:option(Value, "upload_buffer_size", translate("Upload Buffer Size"))
+upload_buffer_size.default = "16777216"
+upload_buffer_size.datatype = "uinteger"
+
+skip_upload_same_size = e:option(Flag, "skip_upload_same_size", translate("Skip uploading same size files"))
+skip_upload_same_size.description = translate("Reduce the upload traffic by skipping uploading files with the same size")
+skip_upload_same_size.rmempty = false
 
 cache_size = e:option(Value, "cache_size", translate("Cache Size"))
 cache_size.default = "1000"
