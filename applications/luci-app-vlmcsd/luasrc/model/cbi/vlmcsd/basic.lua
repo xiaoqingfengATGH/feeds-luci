@@ -1,6 +1,10 @@
 m = Map("vlmcsd")
 m.title = translate("KMS Server")
 m.description = translate("A KMS Server Emulator to active your Windows or Office")
+	.. "<br/>"
+	.. [[<a href="javascript:void" onclick="javascript:window.open('https://github.com/xiaoqingfengATGH/HomeLede/wiki/%E7%8E%A9%E8%BD%ACHomeLede-VLMCSD','_blank')">]]
+	.. ">> 使用说明"
+	.. [[</a>]]
 
 m:section(SimpleSection).template  = "vlmcsd/vlmcsd_status"
 
