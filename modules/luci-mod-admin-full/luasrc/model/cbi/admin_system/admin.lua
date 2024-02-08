@@ -44,7 +44,12 @@ end
 if fs.access("/etc/config/dropbear") then
 
 m2 = Map("dropbear", translate("SSH Access"),
-	translate("Dropbear offers <abbr title=\"Secure Shell\">SSH</abbr> network shell access and an integrated <abbr title=\"Secure Copy\">SCP</abbr> server"))
+	translate("Dropbear offers <abbr title=\"Secure Shell\">SSH</abbr> network shell access and an integrated <abbr title=\"Secure Copy\">SCP</abbr> server")
+	.. "<br/>"
+	.. [[<a href="javascript:void" onclick="javascript:window.open('https://github.com/xiaoqingfengATGH/HomeLede/wiki/%E7%8E%A9%E8%BD%ACHomeLede-SSH%E4%BC%98%E9%9B%85%E5%9B%9E%E5%AE%B6','_blank')">]]
+	.. ">> 高级应用"
+	.. [[</a>]]
+	)
 
 s = m2:section(TypedSection, "dropbear", translate("Dropbear Instance"))
 s.anonymous = true
