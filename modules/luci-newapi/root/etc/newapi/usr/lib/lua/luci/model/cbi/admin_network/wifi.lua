@@ -196,14 +196,13 @@ else
 		m:set(section, "channel", value[2])
 		m:set(section, "htmode", value[3])
 	end
-	
-  noscan = s:taboption("general", Flag, "noscan", translate("Force 40MHz mode"),
-  translate("Always use 40MHz channels even if the secondary channel overlaps. Using this option does not comply with IEEE 802.11n-2009!"))
-  noscan.default = noscan.disabled
-  
-  vendor_vht = s:taboption("general", Flag, "vendor_vht", translate("Enable 256-QAM"),translate("802.11n 2.4Ghz Only"))
-  vendor_vht.default = vendor_vht.disabled
-  
+
+	noscan = s:taboption("general", Flag, "noscan", translate("Force 40MHz mode"),
+		translate("Always use 40MHz channels even if the secondary channel overlaps. Using this option does not comply with IEEE 802.11n-2009!"))
+	noscan.default = noscan.disabled
+
+	vendor_vht = s:taboption("general", Flag, "vendor_vht", translate("Enable 256-QAM"),translate("802.11n 2.4Ghz Only"))
+	vendor_vht.default = vendor_vht.disabled
 end
 
 ------------------- MAC80211 Device ------------------
@@ -220,8 +219,10 @@ if hwtype == "mac80211" then
 
 		tp:value("", translate("auto"))
 		for _, p in ipairs(tx_power_list) do
+		  if p.display_dbm < 50 then
 			tp:value(p.driver_dbm, "%i dBm (%i mW)"
 				%{ p.display_dbm, p.display_mw })
+		  end
 		end
 	end
 
@@ -239,7 +240,7 @@ if hwtype == "mac80211" then
 	legacyrates = s:taboption("advanced", Flag, "legacy_rates", translate("Allow legacy 802.11b rates"))
 	legacyrates.rmempty = false
 	legacyrates.default = "1"
-	
+
 	mubeamformer = s:taboption("advanced", Flag, "mu_beamformer", translate("MU-MIMO"))
 	mubeamformer.rmempty = false
 	mubeamformer.default = "0"
@@ -261,6 +262,11 @@ if hwtype == "mac80211" then
 
 	s:taboption("advanced", Value, "frag", translate("Fragmentation Threshold"))
 	s:taboption("advanced", Value, "rts", translate("RTS/CTS Threshold"))
+	
+	o = s:taboption("advanced", Value, "beacon_int", translate('Beacon Interval'));
+	o.datatype = 'range(15,65535)';
+	o.placeholder = 100;
+	o.rmempty = true;
 end
 
 
@@ -384,6 +390,11 @@ if hwtype == "mt_dbdc" then
 	s:taboption("advanced", Value, "frag", translate("Fragmentation Threshold"))
 	s:taboption("advanced", Value, "rts", translate("RTS/CTS Threshold"))
 	s:taboption("advanced", Flag, "txburst", translate("TX Bursting"))
+	
+	o = s:taboption("advanced", Value, "beacon_int", translate('Beacon Interval'));
+	o.datatype = 'range(15,65535)';
+	o.placeholder = 100;
+	o.rmempty = true;
 end
 
 ----------------------- Interface -----------------------
@@ -619,7 +630,20 @@ if hwtype == "mt_dbdc" then
 	s:taboption("advanced", Flag, "doth", "802.11h")
 
 	disassoc_low_ack = s:taboption("general", Flag, "disassoc_low_ack", translate("Disassociate On Low Acknowledgement"),translate("Allow AP mode to disconnect STAs based on low ACK condition"))
-	disassoc_low_ack.default = disassoc_low_ack.enabled
+	disassoc_low_ack.default = disassoc_low_ack.disabled
+	disassoc_low_ack:depends({mode="ap"})
+	
+	rssikick= s:taboption("general", Value, "rssikick", translate("Kick low RSSI station threshold"), translate("dBm"));
+	rssikick.optional    = true
+	rssikick.placeholder = 75
+	rssikick.datatype = "range(-100,0)"
+	rssikick:depends("disassoc_low_ack", "1")
+
+	rssiassoc= s:taboption("general", Value, "rssiassoc", translate("Station associate threshold"), translate("dBm"));
+	rssiassoc.optional    = true
+	rssiassoc.placeholder = 60
+	rssiassoc.datatype    = "range(-100,0)"
+	rssiassoc:depends("disassoc_low_ack", "1")
 end
 
 ------------------- WiFI-Encryption -------------------
@@ -698,7 +722,7 @@ if hwtype == "mac80211" or hwtype == "prism2" then
 	-- Probe EAP support
 	local has_ap_eap  = (os.execute("hostapd -veap >/dev/null 2>/dev/null") == 0)
 	local has_sta_eap = (os.execute("wpa_supplicant -veap >/dev/null 2>/dev/null") == 0)
-	
+
 		-- Probe SAE support
 	local has_ap_sae  = (os.execute("hostapd -vsae >/dev/null 2>/dev/null") == 0)
 	local has_sta_sae = (os.execute("wpa_supplicant -vsae >/dev/null 2>/dev/null") == 0)
@@ -761,6 +785,8 @@ elseif hwtype == "mt_dbdc" then
 	encr:value("psk", "WPA-PSK")
 	encr:value("psk2", "WPA2-PSK")
 	encr:value("psk-mixed", "WPA-PSK/WPA2-PSK Mixed Mode")
+	encr:value("sae", "WPA3-SAE")
+	encr:value("sae-mixed", "WPA2-PSK/WPA3-SAE Mixed Mode")
 end
 
 auth_server = s:taboption("encryption", Value, "auth_server", translate("Radius-Authentication-Server"))
@@ -875,7 +901,7 @@ end
 
 
 if hwtype == "mac80211" or hwtype == "prism2" then
-  
+
 	-- Probe 802.11k support
 	ieee80211k = s:taboption("encryption", Flag, "ieee80211k", translate("802.11k"), translate("Enables The 802.11k standard provides information to discover the best available access point"))
 	ieee80211k:depends({mode="ap", encryption="wpa"})
@@ -893,7 +919,7 @@ if hwtype == "mac80211" or hwtype == "prism2" then
 	ieee80211k:depends({mode="ap-wds", encryption="sae"})
 	ieee80211k:depends({mode="ap-wds", encryption="sae-mixed"})
 	ieee80211k.rmempty = true
-	
+
 	rrmneighborreport = s:taboption("encryption", Flag, "rrm_neighbor_report", translate("Enable neighbor report via radio measurements"))
 	rrmneighborreport.default = rrmneighborreport.enabled
 	rrmneighborreport:depends({ieee80211k="1"})
@@ -922,7 +948,7 @@ if hwtype == "mac80211" or hwtype == "prism2" then
 	ieee80211v:depends({mode="ap-wds", encryption="sae"})
 	ieee80211v:depends({mode="ap-wds", encryption="sae-mixed"})
 	ieee80211v.rmempty = true
-	
+
 
 	wnmsleepmode = s:taboption("encryption", Flag, "wnm_sleep_mode", translate("extended sleep mode for stations"))
 	wnmsleepmode.default = wnmsleepmode.disabled
@@ -1192,6 +1218,25 @@ if hwtype == "mac80211" or hwtype == "prism2" then
 end
 
 if hwtype == "mt_dbdc" then
+	ieee80211k = s:taboption("encryption", Flag, "ieee80211k", translate("802.11k"), translate("Enables The 802.11k standard provides information to discover the best available access point"))
+	ieee80211k:depends({mode="ap", encryption="wpa"})
+	ieee80211k:depends({mode="ap", encryption="wpa2"})
+	ieee80211k:depends({mode="ap", encryption="psk"})
+	ieee80211k:depends({mode="ap", encryption="psk2"})
+	ieee80211k:depends({mode="ap", encryption="psk-mixed"})
+	ieee80211k:depends({mode="ap", encryption="sae"})
+	ieee80211k:depends({mode="ap", encryption="sae-mixed"})
+	
+	ieee80211v = s:taboption("encryption", Flag, "ieee80211v", translate("802.11v"), translate("Enables 802.11v allows client devices to exchange information about the network topology,tating overall improvement of the wireless network."))
+	ieee80211v:depends({mode="ap", encryption="wpa"})
+	ieee80211v:depends({mode="ap", encryption="wpa2"})
+	ieee80211v:depends({mode="ap", encryption="psk"})
+	ieee80211v:depends({mode="ap", encryption="psk2"})
+	ieee80211v:depends({mode="ap", encryption="psk-mixed"})
+	ieee80211v:depends({mode="ap", encryption="sae"})
+	ieee80211v:depends({mode="ap", encryption="sae-mixed"})
+	ieee80211v.rmempty = true
+	
 	ieee80211r = s:taboption("encryption", Flag, "ieee80211r",
 		translate("802.11r Fast Transition"),
 		translate("Enables fast roaming among access points that belong " ..
@@ -1201,6 +1246,8 @@ if hwtype == "mt_dbdc" then
 	ieee80211r:depends({mode="ap", encryption="psk"})
 	ieee80211r:depends({mode="ap", encryption="psk2"})
 	ieee80211r:depends({mode="ap", encryption="psk-mixed"})
+	ieee80211r:depends({mode="ap", encryption="sae"})
+	ieee80211r:depends({mode="ap", encryption="sae-mixed"})
 	ieee80211r.rmempty = true
 end
 
