@@ -14,12 +14,17 @@ CPU_FREQS=$(cat "$CPUFREQ_PATH"/policy0/scaling_available_frequencies)
 CPU_POLICYS=$(find "$CPUFREQ_PATH"/policy* -maxdepth 0 | grep -Eo '[0-9]+')
 [ ! -d "$CPUFREQ_PATH/policy0" ] || \
 	CPU_MAX_FREQ=$(cat "$CPUFREQ_PATH"/policy0/scaling_max_freq)
+[ ! -d "$CPUFREQ_PATH/policy2" ] || \
+	CPU2_MAX_FREQ=$(cat "$CPUFREQ_PATH"/policy2/scaling_max_freq)
 [ ! -d "$CPUFREQ_PATH/policy4" ] || \
 	CPU4_MAX_FREQ=$(cat "$CPUFREQ_PATH"/policy4/scaling_max_freq)
 [ ! -d "$CPUFREQ_PATH/policy6" ] || \
 	CPU6_MAX_FREQ=$(cat "$CPUFREQ_PATH"/policy6/scaling_max_freq)
 source "/etc/openwrt_release"
 case "$DISTRIB_TARGET" in
+	"amlogic/mesongx")
+		uci_write_config 0 schedutil 1000000 $CPU_MAX_FREQ
+		;;
 	"bcm27xx/bcm2710"|\
 	"bcm27xx/bcm2711"|\
 	"mediatek/mt7622")
@@ -44,9 +49,18 @@ case "$DISTRIB_TARGET" in
 	"ipq95xx/generic")
 		uci_write_config 0 ondemand 936000 $CPU_MAX_FREQ 10 50
 		;;
+	"amlogic/meson8b"|\
 	"meson/meson8b")
 		uci_write_config 0 schedutil 816000 $CPU_MAX_FREQ
 		;;
+	"mediatek/mt7988")
+		uci_write_config 0 schedutil 800000 2300000
+		;;
+	"mvebu/cortexa72")
+		uci_write_config 0 ondemand 550000 $CPU_MAX_FREQ 10 50
+		uci_write_config 2 ondemand 550000 $CPU2_MAX_FREQ 10 50
+		;;
+	"rockchip/rk35xx"|\
 	"rockchip/armv8")
 		uci_write_config 0 schedutil 600000 $CPU_MAX_FREQ
 		echo "$CPU_POLICYS" | grep -q "4" && \
