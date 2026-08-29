@@ -11,10 +11,19 @@ s:tab("template", translate("Edit Template"))
 s:taboption("general", Value, "name", translate("Hostname"))
 s:taboption("general", Value, "description", translate("Description"))
 s:taboption("general", Value, "workgroup", translate("Workgroup"))
+
+e = s:taboption("general", Flag, "enabled", translate("Enabled"))
+e.rmempty = false
+e.default = "1"
+
 h = s:taboption("general", Flag, "homes", translate("Share home-directories"),
         translate("Allow system users to reach their home directories via " ..
                 "network shares"))
 h.rmempty = false
+a = s:taboption("general", Flag, "autoshare", translate("Auto Share"),
+        translate("Auto share local disk which connected"))
+a.rmempty = false
+a.default = "1"
 
 macos = s:taboption("general", Flag, "macos", translate("Enable macOS compatible shares"))
 macos.description = translate("Enables Apple's AAPL extension globally and adds macOS compatibility options to all shares.")
@@ -29,6 +38,18 @@ end
 if nixio.fs.access("/usr/sbin/winbindd") then
 	s:taboption("general", Flag, "disable_winbind", translate("Disable Winbind"))
 end
+
+e = s:taboption("general", Flag, "disable_async_io", translate("Disable Async IO"))
+e.rmempty = false
+e.default = "0"
+
+e = s:taboption("general", Flag, "allow_legacy_protocols", translate("Allow SMBv1 Protocols"))
+e.rmempty = false
+e.default = "0"
+
+e = s:taboption("general", Flag, "enable_extra_tuning", translate("Enable Extra Tuning"))
+e.rmempty = false
+e.default = "0"
 
 tmpl = s:taboption("template", Value, "_tmpl",
 	translate("Edit the template that is used for generating the samba configuration."), 
@@ -66,24 +87,25 @@ br.disabled = "no"
 br.default = "yes"
 
 ro = s:option(Flag, "read_only", translate("Read-only"))
-ro.enabled = "yes"
-ro.disabled = "no"
-ro.default = "yes"
+ro.default = "0"
+ro.rmempty = false
 
-s:option(Flag, "force_root", translate("Force Root"))
+fr = s:option(Flag, "force_root", translate("Force Root"))
+fr.default = "1"
+fr.rmempty = false
 
 au = s:option(Value, "users", translate("Allowed users"))
 au.rmempty = true
 
 go = s:option(Flag, "guest_ok", translate("Allow guests"))
-go.enabled = "yes"
-go.disabled = "no"
-go.default = "no"
+go.default = "1"
+go.rmempty = false
 
 gon = s:option(Flag, "guest_only", translate("Guests only"))
 gon.enabled = "yes"
 gon.disabled = "no"
 gon.default = "no"
+go.rmempty = false
 
 iown = s:option(Flag, "inherit_owner", translate("Inherit owner"))
 iown.enabled = "yes"

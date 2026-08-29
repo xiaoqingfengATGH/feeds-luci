@@ -397,7 +397,7 @@ end
 -- Display DNS settings if dnsmasq is available
 --
 
-if has_dnsmasq then
+if has_dnsmasq and net:proto() == "static" then
 	m2 = Map("dhcp", "", "")
 
 	local has_section = false
@@ -485,6 +485,9 @@ if has_dnsmasq then
 				n:depends("ignore", "")
 			end
 		end
+
+		o = s:taboption("ipv6", Flag, "master", translate("Designated master"),
+ 		        translate("Set this interface as master for RA and DHCPv6 relaying as well as NDP proxying."))
 
 		o = s:taboption("ipv6", ListValue, "ra", translate("Router Advertisement-Service"))
 		o:value("", translate("disabled"))
