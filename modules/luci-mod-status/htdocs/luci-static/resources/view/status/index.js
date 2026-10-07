@@ -282,7 +282,6 @@ return view.extend({
 			{ name: 'view.status.include.10_system' },
 			{ name: 'view.status.include.15_ports', title: _('Port status'), deferFirstLoad: true },
 			{ name: 'view.status.include.20_memory' },
-			{ name: 'view.status.include.25_storage' },
 			{ name: 'view.status.include.30_network' },
 			{ name: 'view.status.include.40_dhcp', title: _('Online Hosts'), deferFirstLoad: true },
 			{ name: 'view.status.include.50_dsl' },

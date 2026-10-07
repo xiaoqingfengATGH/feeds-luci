@@ -6,7 +6,7 @@
 
 {% include('header') %}
 
-<h2 name="content">{{ _('Status') }}</h2>
+<h2 name="content">{{ _(dispatched.title) }}</h2>
 
 <div id="view">
 	<div class="spinning">{{ _('Loading view…') }}</div>
