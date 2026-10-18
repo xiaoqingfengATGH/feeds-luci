@@ -294,7 +294,18 @@ function loadIwinfoInfoMap(force) {
 
 		return Promise.all(queryTargets.map((name) =>
 			L.resolveDefault(callIwinfoInfoCompat(name), null).then((info) => [ name, info ])
-		)).then((entries) => {
+		)).then(async (entries) => {
+			const phyQueries = {};
+			for (const [ name, info ] of entries) {
+				if (info?.hardware?.id?.[0] != 0x14c3 || !/^phy\d+$/.test(info?.phy || ''))
+					continue;
+				phyQueries[info.phy] ??= L.resolveDefault(
+					fs.exec_direct('/usr/sbin/iw', [ 'phy', info.phy, 'info' ]), '');
+			}
+			for (const [ name, info ] of entries) {
+				if (phyQueries[info?.phy])
+					info.theoretical_bitrate = calculateEhtCapabilityRate(info, await phyQueries[info.phy]);
+			}
 			const nextMap = {};
 
 			for (const [ name, info ] of entries)
@@ -667,7 +678,8 @@ function getDisplayTxPower(radioNet) {
 		if (isPlausibleTxPowerValue(info != null ? info.txpower : null, hwtype))
 			return info.txpower;
 
-	if (isPlausibleTxPowerValue(cfgvalue, hwtype))
+	// mt_dbdc configures power as a percentage, not dBm.
+	if (hwtype != 'mt_dbdc' && isPlausibleTxPowerValue(cfgvalue, hwtype))
 		return cfgvalue;
 
 	return null;
@@ -953,6 +965,41 @@ function getDisplayIwinfoBitRate(radioNet) {
 			return rate;
 	}
 
+	return null;
+}
+
+/* EHT full-band PHY ceiling at GI 0.8 us, using advertised TX MCS/NSS.
+ * This is a capability estimate, never an observed station bitrate. */
+function calculateEhtCapabilityRate(info, phyInfo) {
+	const width = +(String(info?.htmode || '').match(/(20|40|80|160|320)$/)?.[1]);
+	const tones = { 20: 234, 40: 468, 80: 980, 160: 1960, 320: 3920 }[width];
+	if (!tones)
+		return null;
+
+	let best = 0;
+	for (const line of String(phyInfo || '').split('\n')) {
+		const m = line.match(/EHT bw\s*(<=|=)\s*(\d+) MHz, max NSS for MCS \d+-(\d+): Rx=\d+, Tx=(\d+)/);
+		if (!m || (m[1] == '=' ? width != +m[2] : width > +m[2]))
+			continue;
+		const nss = +m[4];
+		const bits = { 7: 5, 9: 20 / 3, 11: 25 / 3, 13: 10 }[+m[3]];
+		if (nss >= 1 && nss <= 8 && bits)
+			best = Math.max(best, tones * bits * nss / 13.6);
+	}
+	return best > 0 ? Math.round(best * 10) / 10 : null;
+}
+
+function getDisplayTheoreticalBitRate(radioNet) {
+	const device = radioNet.getWifiDeviceName();
+	if (uci.get('wireless', device, 'type') != 'mt_dbdc' ||
+	    !/^EHT/.test(uci.get('wireless', device, 'htmode') || ''))
+		return null;
+
+	for (const candidate of getIwinfoInfoCandidates(radioNet)) {
+		const rate = cachedIwinfoInfoMap?.[candidate]?.theoretical_bitrate;
+		if (rate > 0)
+			return rate;
+	}
 	return null;
 }
 
@@ -1358,7 +1405,9 @@ function getDisplaySignalPercent(radioNet, hwtype, is_assoc, disabled) {
 }
 
 function getDisplaySignalValue(radioNet, hwtype, is_assoc) {
-	if ((hwtype == 'mt_dbdc' || (isQcaWifiHwtype(hwtype) && radioNet.getMode() == 'ap')) && is_assoc)
+	if (hwtype == 'mt_dbdc' && radioNet.getMode() == 'ap')
+		return is_assoc ? getDisplayTxPower(radioNet) : null;
+	if (isQcaWifiHwtype(hwtype) && radioNet.getMode() == 'ap' && is_assoc)
 		return getDisplayTxPower(radioNet) ?? 30;
 
 	return radioNet.getSignal();
@@ -1391,7 +1440,7 @@ function renderStatusRow(pairs, className) {
 	return added ? row : null;
 }
 
-function render_signal_badge(signalPercent, signalValue, noiseValue, wrap, mode) {
+function render_signal_badge(signalPercent, signalValue, noiseValue, wrap, mode, txpower = false) {
 	let icon = L.resource('icons/signal-075-100.svg'), title, value;
 
 	switch(true) {
@@ -1413,13 +1462,13 @@ function render_signal_badge(signalPercent, signalValue, noiseValue, wrap, mode)
 		}
 		else {
 			value = `${signalValue}\xa0${_('dBm')}`;
-			title = `${_('Signal')} ${signalValue} ${_('dBm')}`;
+			title = `${txpower ? _('Tx-Power') : _('Signal')} ${signalValue} ${_('dBm')}`;
 		}
 	}
 	else if (signalPercent > -1) {
 		switch (mode) {
 			case 'ap':
-				title = _('No client associated');
+				title = txpower ? _('Tx-Power') : _('No client associated');
 				break;
 
 			case 'sta':
@@ -1470,24 +1519,27 @@ function render_network_badge(radioNet) {
 	return render_signal_badge(
 		getDisplaySignalPercent(radioNet, hwtype, is_assoc, disabled),
 		getDisplaySignalValue(radioNet, hwtype, is_assoc),
-		getDisplayNoiseValue(radioNet, hwtype, is_assoc), false, radioNet.getMode());
+		getDisplayNoiseValue(radioNet, hwtype, is_assoc), false, radioNet.getMode(),
+		hwtype == 'mt_dbdc' && radioNet.getMode() == 'ap');
 }
 
 function render_radio_status(radioDev, wifiNets) {
 	const name = getRadioDisplayName(radioDev);
 	const node = E('div', [ E('big', {}, E('strong', {}, name)), E('div') ]);
-	let channel, frequency, bitrate;
+	let channel, frequency, bitrate, theoretical;
 
 	wifiNets.forEach(wifiNet => {
 		channel   = channel   ?? getDisplayChannel(wifiNet);
 		frequency = frequency ?? getDisplayFrequency(wifiNet, channel);
 		bitrate   = bitrate   ?? getDisplayBitRate(wifiNet);
+		theoretical = theoretical ?? getDisplayTheoreticalBitRate(wifiNet);
 	});
 
 	if (isRadioDisplayUp(radioDev, wifiNets))
 		L.itemlist(node.lastElementChild, [
 			_('Channel'), `${channel || '?'} (${frequency || '?'} ${_('GHz')})`,
-			_('Bitrate'), `${bitrate || '?'} ${_('Mbit/s')}`
+			theoretical != null ? _('Theoretical bitrate') : _('Bitrate'),
+			`${theoretical ?? bitrate ?? '?'} ${_('Mbit/s')}`
 		], ' | ');
 	else
 		node.lastElementChild.appendChild(E('em', _('Device is not active')));
@@ -1530,7 +1582,8 @@ function render_modal_status(node, radioNet) {
 	const bssid = getDisplayBSSID(radioNet);
 	const channel = getDisplayChannel(radioNet);
 	const frequency = getDisplayFrequency(radioNet, channel);
-	const bitrate = getDisplayBitRate(radioNet);
+	const theoretical = getDisplayTheoreticalBitRate(radioNet);
+	const bitrate = theoretical ?? getDisplayBitRate(radioNet);
 	const hwtype = uci.get('wireless', radioNet.getWifiDeviceName(), 'type');
 	const disabled = isNetworkDisabled(radioNet);
 	const is_assoc = isDisplayAssociated(radioNet, hwtype, mode, bssid, channel, disabled);
@@ -1542,7 +1595,8 @@ function render_modal_status(node, radioNet) {
 
 	dom.content(node.firstElementChild, render_signal_badge(
 		getDisplaySignalPercent(radioNet, hwtype, is_assoc, disabled),
-		getDisplaySignalValue(radioNet, hwtype, is_assoc), noise, true, radioNet.getMode()));
+		getDisplaySignalValue(radioNet, hwtype, is_assoc), noise, true, radioNet.getMode(),
+		hwtype == 'mt_dbdc' && radioNet.getMode() == 'ap'));
 
 	L.itemlist(node.lastElementChild, [
 		_('Mode'),       mode,
@@ -1553,7 +1607,8 @@ function render_modal_status(node, radioNet) {
 		getDisplayTxPowerLabel(radioNet), (is_assoc && txpower != null) ? `${txpower} ${_('dBm')}` : null,
 		_('Signal'),     (is_assoc && noise != null) ? `${radioNet.getSignal()} ${_('dBm')}` : null,
 		_('Noise'),      (is_assoc && noise != null) ? `${noise} ${_('dBm')}` : null,
-		_('Bitrate'),    is_assoc ? `${bitrate ?? 0} ${_('Mbit/s')}` : null,
+		theoretical != null ? _('Theoretical bitrate') : _('Bitrate'),
+		                is_assoc ? `${bitrate ?? 0} ${_('Mbit/s')}` : null,
 		_('Country'),    is_assoc ? getDisplayCountryCode(radioNet) : null
 	], [ ' | ', E('br'), E('br'), E('br'), E('br'), E('br'), ' | ', E('br'), ' | ' ]);
 
@@ -1705,7 +1760,8 @@ var CBIWifiFrequencyValue = form.Value.extend({
 			configOnly ? {} : this.callDeviceInfo(device_section),
 			configOnly ? {} : L.resolveDefault(this.callWirelessStatus(), {}),
 			!configOnly && isQcaWifiHwtype(hwtype) ? L.resolveDefault(fs.exec_direct('/usr/sbin/iw', [ 'dev' ]), '') : '',
-			!configOnly && isQcaWifiHwtype(hwtype) ? L.resolveDefault(fs.exec_direct('/usr/sbin/iw', [ 'phy' ]), '') : ''
+			!configOnly && isQcaWifiHwtype(hwtype) ? L.resolveDefault(fs.exec_direct('/usr/sbin/iw', [ 'phy' ]), '') : '',
+			isQcaWifiHwtype(hwtype) ? L.resolveDefault(fs.read('/sys/class/net/' + (uci.get('wireless', device_section, 'phy') || device_section) + '/device/uevent'), '') : ''
 		]).then(L.bind(function(data) {
 			const wifidevs = data[0];
 			const freqlist = data[1];
@@ -1725,6 +1781,7 @@ var CBIWifiFrequencyValue = form.Value.extend({
 			this.devinfo = devinfo;
 			this.devcfg = devcfg;
 			this.iwPhyMaxWidth = iwPhyName ? iwPhyWidthMap[iwPhyName] : null;
+			this.qca8074v1 = /^OF_COMPATIBLE_[0-9]+=qcom,cnss-qca8074$/m.test(data[6]);
 			this.hwtype = hwtype;
 
 			this.channels = {
@@ -1839,7 +1896,7 @@ var CBIWifiFrequencyValue = form.Value.extend({
 				const qca_has_ac = qca_has_ax || has_ac || /^11ac/.test(hwval);
 				const qca_has_n = qca_has_ac || hwmodelist.n || /^11n/.test(hwval);
 				const qca_has_htinfo = (Object.keys(htmodelist).length > 0);
-				const qca_max_width = this.iwPhyMaxWidth || Infinity;
+				const qca_max_width = this.qca8074v1 ? 80 : (this.iwPhyMaxWidth || Infinity);
 				const qca_ht20 = !!(!qca_has_htinfo || htmodelist.HT20 || htmodelist.VHT20 || htmodelist.HE20 || htmodelist.EHT20 || /^HT20$/.test(htval));
 				const qca_ht40 = !!(!qca_has_htinfo || htmodelist.HT40 || htmodelist.VHT40 || htmodelist.HE40 || htmodelist.EHT40 || /^HT40$/.test(htval));
 				const qca_ht80 = (!!(!qca_has_htinfo || htmodelist.VHT80 || htmodelist.HE80 || htmodelist.EHT80 || /^HT80$/.test(htval)) && qca_max_width >= 80);
@@ -1865,7 +1922,7 @@ var CBIWifiFrequencyValue = form.Value.extend({
 						'HT40', '40 MHz', { available: qca_ht40 },
 						'HT80', '80 MHz', { available: qca_ht80 },
 						'HT160', '160 MHz', { available: qca_ht160 },
-						'HT80_80', '80+80 MHz', { available: /^HT80_80$/.test(htval) }
+						'HT80_80', '80+80 MHz', { available: !this.qca8074v1 && /^HT80_80$/.test(htval) }
 					],
 					'ax': [
 						'HT20', '20 MHz', { available: qca_ht20 },
@@ -2601,6 +2658,11 @@ return view.extend({
 			callSystemBoard()
 		]).then((data) => {
 			this.boardinfo = data[4] || {};
+			/* MTK capability rates need iwinfo and the PHY MCS/NSS map.
+			 * Populate them before the first render, not the next poll. */
+			if (!this.checkAnonymousSections() &&
+			    uci.sections('wireless', 'wifi-device').some(radio => radio.type == 'mt_dbdc'))
+				return loadIwinfoInfoMap(false).then(() => data);
 			return data;
 		});
 	},
@@ -2912,7 +2974,8 @@ return view.extend({
 
 					o = ss.taboption('advanced', form.Flag, 'noscan', _('Force 40MHz mode'), _('Always use 40MHz channels even if the secondary channel overlaps. Using this option does not comply with IEEE 802.11n-2009!'));
 					o.depends({ '_freq': '2g', '!contains': true });
-					o.default = o.disabled;
+					o.ucisection = radioNet.getWifiDeviceName();
+					o.default = o.enabled;
 					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'mu_beamformer', _('MU-MIMO'));
