@@ -1541,6 +1541,9 @@ msgstr "請指定下載地址。"
 msgid "File download failed or timed out: %s"
 msgstr "文件下載失敗或超時：%s"
 
+msgid "File verification failed."
+msgstr "檔案校驗失敗"
+
 msgid "File path required."
 msgstr "請指定文件路径。"
 
@@ -2211,8 +2214,14 @@ msgstr "Socks切換偵測：連接埠 [%s] 節點切換完畢！"
 msgid "Socks switch detection: Port [%s] [%s:[%s]] abnormal."
 msgstr "Socks切換偵測：連接埠 [%s] 異常。"
 
-msgid "Socks switch detection: Port [%s] all nodes are unavailable!"
-msgstr "Socks切換偵測：連接埠 [%s] 所有節點均不可用！"
+msgid "Socks switch detection: Port [%s] all nodes are unavailable or switching failed!"
+msgstr "Socks切換偵測：連接埠 [%s] 所有節點均不可用或切換失敗！"
+
+msgid "Socks switch detection: Port [%s] node switch failed, continue trying other nodes!"
+msgstr "Socks切換偵測：連接埠 [%s] 節點切換失敗，繼續嘗試其他節點！"
+
+msgid "Socks switch detection: Port [%s] failed to restore the primary node!"
+msgstr "Socks切換偵測：連接埠 [%s] 恢復主節點失敗！"
 
 msgid "Socks switch detection: Port [%s] Unknown error."
 msgstr "Socks切換偵測：連接埠 [%s] 未知錯誤。"
@@ -2270,6 +2279,9 @@ msgstr "開始更新規則..."
 
 msgid "Download file size verification error. Original file size: %sB. Downloaded file size: %sB."
 msgstr "下載檔案大小校驗出錯，原始檔案大小 %sB，下載檔案大小：%sB。"
+
+msgid "%s SHA256 verification information is invalid. Update failed."
+msgstr "%s SHA256 校驗資訊無效，更新失敗。"
 
 msgid "Downloaded file is empty or an error occurred while reading it."
 msgstr "下載的文件為空或讀取文件時發生錯誤。"
@@ -2436,6 +2448,9 @@ msgstr "開始訂閱：%s"
 msgid "Subscription: [%s] No changes, no update required."
 msgstr "訂閱:【%s】沒有變化，無需更新。"
 
+msgid "Refresh subscription [%s] account usage and expiration information."
+msgstr "重新整理訂閱【%s】帳戶用量與到期時間資訊。"
+
 msgid "[%s] Subscription failed. This could be due to an invalid subscription address or a network issue. Please diagnose the problem! [%s]"
 msgstr "【%s】訂閱失敗，可能是訂閱地址無效，或是網絡問題，請診斷！[%s]"
 
@@ -2477,6 +2492,9 @@ msgstr "配置支援的密碼套件列表。"
 
 msgid "This username already exists."
 msgstr "該用戶名已存在。"
+
+msgid "Update Options"
+msgstr "更新選項"
 
 msgid "MASQUE Path"
 msgstr "MASQUE 路徑"
